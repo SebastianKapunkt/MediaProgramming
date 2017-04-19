@@ -1,0 +1,10 @@
+.idea/*
+.gradle/*
+MediaProgramming.iml
+*.class
+gradlew.bat
+dataset
+testset
+build/
+classes/
+gradle/
