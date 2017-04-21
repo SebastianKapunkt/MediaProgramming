@@ -6,6 +6,10 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /**
  * DatasetViewer: Categorizes and lists all image files in a directory.
@@ -17,8 +21,6 @@ import java.nio.file.Path;
 public class DatasetViewerController extends DatasetViewerBase {
 
     /**
-     * TODO Calculate the mean color of all given images. Or return PINK if there are no images.
-     *
      * @param imageFiles
      * @return
      */
@@ -46,8 +48,6 @@ public class DatasetViewerController extends DatasetViewerBase {
                 red = red / pixels.length;
                 green = green / pixels.length;
                 blue = blue / pixels.length;
-
-                System.out.println(String.format("r: %s, g: %s, b: %s", red, green, blue));
                 return Color.rgb(red, green, blue);
             }
         }
@@ -56,15 +56,49 @@ public class DatasetViewerController extends DatasetViewerBase {
     }
 
     /**
-     * TODO Calculate the mean images of all given images. Or return NULL if there are no images.
-     *
      * @param imageFiles
      * @return
      */
     public BufferedImage getMeanImage(Path... imageFiles) {
-        
-        // no images? return null
-        if (imageFiles.length == 0) return null;
+        if (imageFiles.length >= 0) {
+            List<BufferedImage> imageList = new ArrayList<>();
+
+            for (Path imageFile : imageFiles) {
+                try {
+                    imageList.add(ImageIO.read(imageFile.toFile()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            int width = imageList.get(0).getWidth();
+            int height = imageList.get(0).getHeight();
+
+            BufferedImage resultImage = new BufferedImage(width, height, TYPE_INT_RGB);
+            int red, green, blue;
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    red = 0;
+                    green = 0;
+                    blue = 0;
+
+                    for (BufferedImage image : imageList) {
+                        red += (image.getRGB(x, y) >> 16) & 0xff;
+                        green += (image.getRGB(x, y) >> 8) & 0xff;
+                        blue += image.getRGB(x, y) & 0xff;
+                        System.out.println("original:" + image.getRGB(x, y));
+                    }
+                    red = red / imageList.size();
+                    blue = blue / imageList.size();
+                    green = green / imageList.size();
+                    System.out.println("result:" + ((red << 16) | (green << 8) | blue));
+                    resultImage.setRGB(x, y, (red << 16) | (green << 8) | blue);
+                }
+            }
+
+            return resultImage;
+        }
 
         return null;
     }
