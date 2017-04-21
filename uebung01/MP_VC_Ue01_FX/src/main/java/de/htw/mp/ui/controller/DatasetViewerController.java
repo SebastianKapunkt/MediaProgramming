@@ -87,12 +87,10 @@ public class DatasetViewerController extends DatasetViewerBase {
                         red += (image.getRGB(x, y) >> 16) & 0xff;
                         green += (image.getRGB(x, y) >> 8) & 0xff;
                         blue += image.getRGB(x, y) & 0xff;
-                        System.out.println("original:" + image.getRGB(x, y));
                     }
                     red = red / imageList.size();
                     blue = blue / imageList.size();
                     green = green / imageList.size();
-                    System.out.println("result:" + ((red << 16) | (green << 8) | blue));
                     resultImage.setRGB(x, y, (red << 16) | (green << 8) | blue);
                 }
             }
