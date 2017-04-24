@@ -1,0 +1,35 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+	id 'idea'
+}
+
+// Zeichenenkoding
+tasks.withType(AbstractCompile)*.options*.encoding = "UTF-8"
+
+// Java Kompatibilität
+sourceCompatibility = targetCompatibility = 1.8
+
+// wie soll das Projekt in Eclipse heißen
+def projectName = 'MP_VC_Ue02_FX'
+eclipse.project.name = projectName
+idea.module.name = projectName
+
+// Wo sollen Abhängigkeiten nachgeschaut werden
+repositories {
+    mavenCentral()
+}
+
+// Abhängigkeiten
+dependencies {
+	compile fileTree('lib');			// verwende alle Jars im Lib Verzeichnis
+	testCompile 'junit:junit:4.+';		// jUnit für alle Tests 
+}
+
+/**
+ * Erstellt die gradlew.bat und gradlew.sh Datei 
+ */
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.14";
+	distributionUrl = "https://services.gradle.org/distributions/gradle-2.14-all.zip";
+}

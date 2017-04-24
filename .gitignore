@@ -1,10 +1,11 @@
-uebung01/MP_VC_Ue01_FX/.idea/*
 .gradle/*
 MediaProgramming.iml
 *.class
 gradlew.bat
 dataset
 testset
-build/
+build
 classes/
-gradle/
+gradle
+.gradle
+.idea
