@@ -7,9 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
@@ -98,7 +96,7 @@ public class DatasetViewerController extends DatasetViewerBase {
 
             return resultImage;
         }
-        
+
         return null;
     }
 
@@ -114,7 +112,95 @@ public class DatasetViewerController extends DatasetViewerBase {
      */
     public List<FeatureContainer> retrieve(FeatureContainer query, FeatureContainer[] database, FeatureType
             featureType) {
-        return Arrays.stream(database).collect(Collectors.toList());
+        switch (featureType) {
+            case MeanColor:
+                return retrieveMeanColor(query, database);
+            case MeanImage:
+                return retrieveMeanImage(query, database);
+            default:
+                return Arrays.stream(database).collect(Collectors.toList());
+        }
+    }
+
+    private List<FeatureContainer> retrieveMeanImage(FeatureContainer query, FeatureContainer[] database) {
+        int width = query.getMeanImage().getWidth();
+        int height = query.getMeanImage().getHeight();
+
+        // [pixel position][0 = red 1 = green 2 = blue]
+        double[][] meanImagePixel;
+
+        double[] rgbQ = getRgbFromMeanColor(query);
+
+        System.out.println(String.format("r: %s g: %s b:%s", rgbQ[0], rgbQ[1], rgbQ[2]));
+
+//        return Arrays.stream(database)
+//                .filter(image -> !image.getName().equals(query.getName()))
+//                .sorted((o1, o2) -> {
+//                    double[] rgbO1 = getRgbFromMeanColor(o1);
+//                    double[] rgbO2 = getRgbFromMeanColor(o2);
+//
+//                    double redQAndO1 = Math.abs(rgbQ[0] - rgbO1[0]);
+//                    double greenQAndO1 = Math.abs(rgbQ[1] - rgbO1[1]);
+//                    double blueQAndO1 = Math.abs(rgbQ[2] - rgbO1[2]);
+//
+//                    double redQAndO2 = Math.abs(rgbQ[0] - rgbO2[0]);
+//                    double greenQAndO2 = Math.abs(rgbQ[1] - rgbO2[1]);
+//                    double blueQAnd02 = Math.abs(rgbQ[2] - rgbO2[2]);
+//
+//                    double sumQAndO1 = redQAndO1 + greenQAndO1 + blueQAndO1;
+//                    double sumQAndO2 = redQAndO2 + greenQAndO2 + blueQAnd02;
+//
+//                    if (sumQAndO1 > sumQAndO2) {
+//                        return 1;
+//                    } else if (sumQAndO1 == sumQAndO2) {
+//                        return 0;
+//                    } else {
+//                        return -1;
+//                    }
+//                })
+//                .collect(Collectors.toList());
+        return null;
+    }
+
+    private List<FeatureContainer> retrieveMeanColor(FeatureContainer query, FeatureContainer[] database) {
+        double[] rgbQ = getRgbFromMeanColor(query);
+
+        System.out.println(String.format("r: %s g: %s b:%s", rgbQ[0], rgbQ[1], rgbQ[2]));
+
+        return Arrays.stream(database)
+                .filter(image -> !image.getName().equals(query.getName()))
+                .sorted((o1, o2) -> {
+                    double[] rgbO1 = getRgbFromMeanColor(o1);
+                    double[] rgbO2 = getRgbFromMeanColor(o2);
+
+                    double redQAndO1 = Math.abs(rgbQ[0] - rgbO1[0]);
+                    double greenQAndO1 = Math.abs(rgbQ[1] - rgbO1[1]);
+                    double blueQAndO1 = Math.abs(rgbQ[2] - rgbO1[2]);
+
+                    double redQAndO2 = Math.abs(rgbQ[0] - rgbO2[0]);
+                    double greenQAndO2 = Math.abs(rgbQ[1] - rgbO2[1]);
+                    double blueQAnd02 = Math.abs(rgbQ[2] - rgbO2[2]);
+
+                    double sumQAndO1 = redQAndO1 + greenQAndO1 + blueQAndO1;
+                    double sumQAndO2 = redQAndO2 + greenQAndO2 + blueQAnd02;
+
+                    if (sumQAndO1 > sumQAndO2) {
+                        return 1;
+                    } else if (sumQAndO1 == sumQAndO2) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                })
+                .collect(Collectors.toList());
+    }
+
+    private double[] getRgbFromMeanColor(FeatureContainer container) {
+        return new double[]{
+                container.getMeanColor().getRed(),
+                container.getMeanColor().getGreen(),
+                container.getMeanColor().getBlue()
+        };
     }
 
     /**
@@ -127,6 +213,13 @@ public class DatasetViewerController extends DatasetViewerBase {
      */
 
     public String classify(List<FeatureContainer> sortedList, int k) {
-        return sortedList.get(0).getCategory();
+        Map<String, Integer> map = new HashMap<>();
+
+        sortedList.stream().limit(k).forEach(x -> {
+            System.out.println(String.format("r: %s g: %s b:%s", x.getMeanColor().getRed(), x.getMeanColor().getGreen(), x.getMeanColor().getBlue()));
+            map.put(x.getCategory(), map.getOrDefault(x.getCategory(), 0) + 1);
+        });
+
+        return Collections.max(map.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 }
