@@ -125,41 +125,44 @@ public class DatasetViewerController extends DatasetViewerBase {
     private List<FeatureContainer> retrieveMeanImage(FeatureContainer query, FeatureContainer[] database) {
         int width = query.getMeanImage().getWidth();
         int height = query.getMeanImage().getHeight();
+        int[][] meanImagePixel = new int[width * height][3];
 
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                meanImagePixel[y * width + x][0] = (query.getMeanImage().getRGB(x, y) >> 16) & 0xff;
+                meanImagePixel[y * width + x][1] = (query.getMeanImage().getRGB(x, y) >> 8) & 0xff;
+                meanImagePixel[y * width + x][2] = query.getMeanImage().getRGB(x, y) & 0xff;
+            }
+        }
         // [pixel position][0 = red 1 = green 2 = blue]
-        double[][] meanImagePixel;
 
         double[] rgbQ = getRgbFromMeanColor(query);
 
         System.out.println(String.format("r: %s g: %s b:%s", rgbQ[0], rgbQ[1], rgbQ[2]));
 
-//        return Arrays.stream(database)
-//                .filter(image -> !image.getName().equals(query.getName()))
-//                .sorted((o1, o2) -> {
-//                    double[] rgbO1 = getRgbFromMeanColor(o1);
-//                    double[] rgbO2 = getRgbFromMeanColor(o2);
-//
-//                    double redQAndO1 = Math.abs(rgbQ[0] - rgbO1[0]);
-//                    double greenQAndO1 = Math.abs(rgbQ[1] - rgbO1[1]);
-//                    double blueQAndO1 = Math.abs(rgbQ[2] - rgbO1[2]);
-//
-//                    double redQAndO2 = Math.abs(rgbQ[0] - rgbO2[0]);
-//                    double greenQAndO2 = Math.abs(rgbQ[1] - rgbO2[1]);
-//                    double blueQAnd02 = Math.abs(rgbQ[2] - rgbO2[2]);
-//
-//                    double sumQAndO1 = redQAndO1 + greenQAndO1 + blueQAndO1;
-//                    double sumQAndO2 = redQAndO2 + greenQAndO2 + blueQAnd02;
-//
-//                    if (sumQAndO1 > sumQAndO2) {
-//                        return 1;
-//                    } else if (sumQAndO1 == sumQAndO2) {
-//                        return 0;
-//                    } else {
-//                        return -1;
-//                    }
-//                })
-//                .collect(Collectors.toList());
-        return null;
+        return Arrays.stream(database)
+                .filter(image -> !image.getName().equals(query.getName()))
+                .sorted((o1, o2) -> {
+                    double featureValueO1 = 0;
+                    double featureValueO2 = 0;
+
+                    for (int x = 0; x < width; x++) {
+                        for (int y = 0; y < height; y++) {
+                            featureValueO1 = featureValueO1
+                                    + Math.abs(meanImagePixel[y * width + x][0] - ((o1.getMeanImage().getRGB(x, y) >> 16) & 0xff))
+                                    + Math.abs(meanImagePixel[y * width + x][1] - ((o1.getMeanImage().getRGB(x, y) >> 8) & 0xff))
+                                    + Math.abs(meanImagePixel[y * width + x][2] - (o1.getMeanImage().getRGB(x, y) & 0xff));
+
+                            featureValueO2 = featureValueO2
+                                    + Math.abs(meanImagePixel[y * width + x][0] - ((o2.getMeanImage().getRGB(x, y) >> 16) & 0xff))
+                                    + Math.abs(meanImagePixel[y * width + x][1] - ((o2.getMeanImage().getRGB(x, y) >> 8) & 0xff))
+                                    + Math.abs(meanImagePixel[y * width + x][2] - (o2.getMeanImage().getRGB(x, y) & 0xff));
+                        }
+                    }
+
+                    return calculateSort(featureValueO1, featureValueO2);
+                })
+                .collect(Collectors.toList());
     }
 
     private List<FeatureContainer> retrieveMeanColor(FeatureContainer query, FeatureContainer[] database) {
@@ -184,15 +187,19 @@ public class DatasetViewerController extends DatasetViewerBase {
                     double sumQAndO1 = redQAndO1 + greenQAndO1 + blueQAndO1;
                     double sumQAndO2 = redQAndO2 + greenQAndO2 + blueQAnd02;
 
-                    if (sumQAndO1 > sumQAndO2) {
-                        return 1;
-                    } else if (sumQAndO1 == sumQAndO2) {
-                        return 0;
-                    } else {
-                        return -1;
-                    }
+                    return calculateSort(sumQAndO1, sumQAndO2);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private int calculateSort(double featureValueO1, double featureValueO2) {
+        if (featureValueO1 > featureValueO2) {
+            return 1;
+        } else if (featureValueO1 == featureValueO2) {
+            return 0;
+        } else {
+            return -1;
+        }
     }
 
     private double[] getRgbFromMeanColor(FeatureContainer container) {
@@ -204,7 +211,6 @@ public class DatasetViewerController extends DatasetViewerBase {
     }
 
     /**
-     * TODO Predict the category.
      * Make the prediction based on the sorted list of features (images or categories).
      *
      * @param sortedList
