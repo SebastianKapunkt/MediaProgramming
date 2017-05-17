@@ -226,6 +226,19 @@ public class DatasetViewerController extends DatasetViewerBase {
             map.put(x.getCategory(), map.getOrDefault(x.getCategory(), 0) + 1);
         });
 
+        int ref = 0;
+
+        for (String s : map.keySet()) {
+            ref++;
+            if (map.get(s) > 1) {
+                break;
+            }
+        }
+
+        if (ref == k) {
+            return sortedList.get(0).getCategory();
+        }
+
         return Collections.max(map.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 }
